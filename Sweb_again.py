@@ -119,7 +119,6 @@ def evaluate_candidates(df_sorted, weights):
 
     temp1 = pd.DataFrame({
         "Name": df_sorted["Full Name|name-1"],
-        "Submission Time": df_sorted["Submission Time|hidden-2"],
         "Logical Thinking": data_LT,
         "Analytical Skills": data_ana,
         "Leadership": data_LS
@@ -151,7 +150,7 @@ if uploaded_file is not None:
 
     st.subheader("Tabel Ringkasan Penilaian")
     st.dataframe(
-        temp1[["Name", "Submission Time", "Logical Thinking", "Analytical Skills", "Leadership", "Overall"]]
+        temp1[["Name", "Logical Thinking", "Analytical Skills", "Leadership", "Overall"]]
         .sort_values(by="Name", ascending=True)
         .reset_index(drop=True),
         use_container_width=True
@@ -175,4 +174,14 @@ if uploaded_file is not None:
     categories += [categories[0]]
 
     fig = go.Figure(
-        data=[go.Scatterpolar(r=values, theta=categories, fill='toself', name=row["
+        data=[go.Scatterpolar(r=values, theta=categories, fill='toself', name=row["Name"])]
+    )
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        showlegend=False,
+        title=f"Radar Chart: {row['Name']}"
+    )
+    st.plotly_chart(fig)
+
+else:
+    st.warning("Silakan unggah file CSV kandidat terlebih dahulu di sidebar.")
