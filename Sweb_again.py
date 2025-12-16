@@ -63,8 +63,8 @@ def evaluate_candidates(df_sorted, weights):
                 s2 = df_sorted["University Name|text-6"].iloc[x].lower()
                 if "binus" in s2 or "prasetiya" in s2 or "prasetya" in s2 or "prasmul" in s2:
                     data_Uni.append(70)
-            else:
-                data_Uni.append(40)
+                else:
+                    data_Uni.append(40)
 
         # GPA
         s = df_sorted["GPA|number-3"].iloc[x]
