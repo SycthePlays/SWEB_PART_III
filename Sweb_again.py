@@ -60,7 +60,7 @@ def evaluate_candidates(df_sorted, weights):
             elif "Brawijaya" in s1 or "ITS" in s1 or "UNAIR" in s1 or "UNDIP" in s1 or "IPB" in s1 or "UNPAD" in s1 or "PRASMUL" in s1:
                 data_Uni.append(70)
             elif s1 == "Other":
-                s2 = (df_sorted["University Name|text-6"].iloc[x]).lower()
+                s2 = df_sorted["University Name|text-6"].iloc[x].lower()
                 if "binus" in s2 or "prasetiya" in s2 or "prasetya" in s2 or "prasmul" in s2:
                     data_Uni.append(70)
             else:
