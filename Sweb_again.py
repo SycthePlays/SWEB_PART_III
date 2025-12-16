@@ -119,10 +119,13 @@ def evaluate_candidates(df_sorted, weights):
 
     temp1 = pd.DataFrame({
         "Name": df_sorted["Full Name|name-1"],
+        "Submission Time": df_sorted["Submission Time|hidden-2"],
         "Logical Thinking": data_LT,
         "Analytical Skills": data_ana,
         "Leadership": data_LS
     })
+
+
 
     temp1["Overall"] = (
         (temp1["Logical Thinking"] * w_LT +
@@ -150,7 +153,7 @@ if uploaded_file is not None:
 
     st.subheader("Tabel Ringkasan Penilaian")
     st.dataframe(
-        temp1[["Name", "Logical Thinking", "Analytical Skills", "Leadership", "Overall"]]
+        temp1[["Name", "Submission Time", "Logical Thinking", "Analytical Skills", "Leadership", "Overall"]]
         .sort_values(by="Name", ascending=True)
         .reset_index(drop=True),
         use_container_width=True
