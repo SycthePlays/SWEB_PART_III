@@ -118,6 +118,7 @@ def evaluate_candidates(df_sorted, weights):
         data_ana.append((data_in[x]*w_intern + data_ach[x]*w_ach + data_ach_busi[x]*w_case) / (w_intern + w_ach + w_case))
 
     temp1 = pd.DataFrame({
+        "Email": df_sorted["Email Address|email-1"],
         "Name": df_sorted["Full Name|name-1"],
         "Submission Date": df_sorted["Submission Date|hidden-3"],
         "Logical Thinking": data_LT,
@@ -153,7 +154,7 @@ if uploaded_file is not None:
 
     st.subheader("Tabel Ringkasan Penilaian")
     st.dataframe(
-        temp1[["Name", "Submission Date", "Logical Thinking", "Analytical Skills", "Leadership", "Overall"]]
+        temp1[["Email", "Name", "Submission Date", "Logical Thinking", "Analytical Skills", "Leadership", "Overall"]]
         .sort_values(by="Name", ascending=True)
         .reset_index(drop=True),
         use_container_width=True
