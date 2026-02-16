@@ -95,7 +95,8 @@ def evaluate_candidates(df_sorted, weights):
 
         # Analytical Skills
         s = df_sorted["Have you completed any internship?|radio-7"].iloc[x]
-        if s == "No":
+        s6 = df_sorted["Have you had any full-time work experience?|radio-5"].iloc[x]
+        if s == "No" and s6 == "No":
             data_in.append(0)
         else:
             if s == "Consulting Firm" or df_sorted["Have you had any full-time work experience?|radio-5"].iloc[x] == "Yes":
