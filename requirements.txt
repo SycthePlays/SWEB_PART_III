@@ -6,3 +6,4 @@ plotly
 flask
 ipywidgets
 json
+io
