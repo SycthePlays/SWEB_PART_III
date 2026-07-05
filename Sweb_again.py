@@ -174,6 +174,31 @@ def parse_gpa(val):
     except (TypeError, ValueError):
         return None
 
+import re
+
+_SUBMISSION_TIME_PATTERN = re.compile(r'^\d{1,2}:\d{2}:\d{2}\s*(am|pm),\s*gmt[+-]\d{3,4}$', re.IGNORECASE)
+
+def get_submission_dates(df_sorted):
+    """The source sheet has a known bug: for some submissions the 'Pages|hidden-1'
+    field is empty, which shifts every hidden column after it one slot to the left
+    (the real submission time ends up in the Pages slot, and the real submission
+    date ends up in the Submission Time slot, leaving Submission Date blank).
+    Detect that shift by recognizing a time-like value sitting in the Pages column
+    and pull the real date back out of the Submission Time column instead."""
+    n = len(df_sorted)
+    pages_col   = df_sorted["Pages|hidden-1"] if "Pages|hidden-1" in df_sorted.columns else pd.Series([""]*n)
+    subtime_col = df_sorted["Submission Time|hidden-2"] if "Submission Time|hidden-2" in df_sorted.columns else pd.Series([""]*n)
+    subdate_col = df_sorted["Submission Date|hidden-3"] if "Submission Date|hidden-3" in df_sorted.columns else pd.Series([""]*n)
+
+    result = []
+    for i in range(n):
+        pages_val = str(pages_col.iloc[i]).strip()
+        if _SUBMISSION_TIME_PATTERN.match(pages_val):
+            result.append(str(subtime_col.iloc[i]).strip())
+        else:
+            result.append(str(subdate_col.iloc[i]).strip())
+    return result
+
 def evaluate_candidates(df_raw, weights):
     w_uni, w_gpa, w_intern, w_ach, w_case, w_type, w_role, w_LT, w_ANA, w_LS = weights
     df_sorted = df_raw.copy()
@@ -264,7 +289,7 @@ def evaluate_candidates(df_raw, weights):
         "Name":            df_sorted["Full Name|name-1"],
         "Email":           gcol("Email Address|email-1"),
         "Phone":           gcol("Mobile Phone|phone-1"),
-        "Submission Date": gcol("Submission Date|hidden-3"),
+        "Submission Date": get_submission_dates(df_sorted),
         "CV_Link":         gcol("CV / Resume|upload-1"),
         "Transcript_Link": gcol("Academic Transricpt|upload-2"),   # note: typo in CSV kept as-is
         "LT_score":   data_LT,   "AS_score":  data_ana,  "LS_score":  data_LS,
@@ -286,6 +311,20 @@ def evaluate_candidates(df_raw, weights):
 # -------------------------------
 # Helpers
 # -------------------------------
+def disp(val, default="-"):
+    """Render a value for display, never showing literal 'nan'/'None' text."""
+    if val is None:
+        return default
+    try:
+        if pd.isna(val):
+            return default
+    except (TypeError, ValueError):
+        pass
+    s = str(val).strip()
+    if s == "" or s.lower() == "nan":
+        return default
+    return s
+
 def score_color(val):
     try: v = float(val)
     except: return "#A8B8D0"
@@ -468,10 +507,10 @@ def render_summary_html(df_display, start_index=1):
         rows_html += f"""
         <tr>
           <td class="index-cell">{idx}</td>
-          <td class="name-cell">{r.get('Name','')}</td>
-          <td class="meta">{r.get('Email','')}</td>
-          <td class="phone-cell">{r.get('Phone','')}</td>
-          <td class="meta">{r.get('Submission Date','')}</td>
+          <td class="name-cell">{disp(r.get('Name'))}</td>
+          <td class="meta">{disp(r.get('Email'))}</td>
+          <td class="phone-cell">{disp(r.get('Phone'))}</td>
+          <td class="meta">{disp(r.get('Submission Date'))}</td>
           <td class="links-cell">{cv_html}<br>{tr_html}</td>
           <td>{render_cat(r["Logical Thinking_display"])}</td>
           <td>{render_cat(r["Analytical Skills_display"])}</td>
@@ -488,7 +527,7 @@ def render_summary_html(df_display, start_index=1):
 @st.dialog("📋 Detail Lengkap Kandidat", width="large")
 def show_popup_detail(row):
     st.markdown(f"## 🧑‍💼 {row['Name']}")
-    st.caption(f"📧 {row.get('Email','-')}  |  📱 {row.get('Phone','-')}  |  📅 {row.get('Submission Date','-')}")
+    st.caption(f"📧 {disp(row.get('Email'))}  |  📱 {disp(row.get('Phone'))}  |  📅 {disp(row.get('Submission Date'))}")
 
     cv_url = str(row.get("CV_Link","")).strip()
     tr_url = str(row.get("Transcript_Link","")).strip()
@@ -530,7 +569,11 @@ st.markdown('<p class="main-subheader">Candidate Evaluation Dashboard</p>', unsa
 st.markdown('<h1 class="main-header">Penilaian Kandidat</h1>', unsafe_allow_html=True)
 
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+    try:
+        df = pd.read_csv(uploaded_file, dtype=str, keep_default_na=False, engine="python", on_bad_lines="warn")
+    except Exception:
+        uploaded_file.seek(0)
+        df = pd.read_csv(uploaded_file, dtype=str, keep_default_na=False)
     df_raw = df.sort_values(by="Full Name|name-1").reset_index(drop=True)
     weights = (w_uni,w_gpa,w_intern,w_ach,w_case,w_type,w_role,w_LT,w_ANA,w_LS)
     temp1 = evaluate_candidates(df_raw, weights)
@@ -618,7 +661,7 @@ if uploaded_file is not None:
         cv_u = str(row_sel.get("CV_Link","")).strip()
         tr_u = str(row_sel.get("Transcript_Link","")).strip()
         info_cols = st.columns([3,1,1])
-        info_cols[0].markdown(f"**📧** {row_sel.get('Email','-')}  &nbsp;|&nbsp;  **📱** {row_sel.get('Phone','-')}  &nbsp;|&nbsp;  **📅** {row_sel.get('Submission Date','-')}")
+        info_cols[0].markdown(f"**📧** {disp(row_sel.get('Email'))}  &nbsp;|&nbsp;  **📱** {disp(row_sel.get('Phone'))}  &nbsp;|&nbsp;  **📅** {disp(row_sel.get('Submission Date'))}")
         if cv_u and cv_u != "nan":
             info_cols[1].link_button("📄 CV", cv_u, use_container_width=True)
         if tr_u and tr_u != "nan":
