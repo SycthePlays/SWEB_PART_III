@@ -156,6 +156,24 @@ w_LS  = st.sidebar.slider("Bobot Leadership", 0.0, 1.0, 0.4, 0.01)
 # -------------------------------
 # 🧠 Evaluation Function
 # -------------------------------
+def parse_gpa(val):
+    """Robustly parse a GPA value that may use a comma decimal separator
+    (common in Indonesian input, e.g. '3,75') or have stray whitespace."""
+    try:
+        if val is None:
+            return None
+        if isinstance(val, (int, float)):
+            if val != val:  # NaN check
+                return None
+            return float(val)
+        s = str(val).strip()
+        if s == "" or s.lower() == "nan":
+            return None
+        s = s.replace(",", ".")
+        return float(s)
+    except (TypeError, ValueError):
+        return None
+
 def evaluate_candidates(df_raw, weights):
     w_uni, w_gpa, w_intern, w_ach, w_case, w_type, w_role, w_LT, w_ANA, w_LS = weights
     df_sorted = df_raw.copy()
@@ -185,8 +203,9 @@ def evaluate_candidates(df_raw, weights):
                 data_Uni[x] = 70 if any(k in s2 for k in ["BINUS","PRASETIYA","PRASETYA","PRASMUL","BINA NUSANTARA"]) else 40
             gpa_col = "GPA|number-3"
 
-        try: s_gpa = float(df_sorted[gpa_col].iloc[x])
-        except: s_gpa = 0.0
+        s_gpa = parse_gpa(df_sorted[gpa_col].iloc[x])
+        if s_gpa is None:
+            s_gpa = 0.0
         if s_gpa >= 3.75: data_GPA[x] = 100
         elif s_gpa >= 3.5: data_GPA[x] = 70
         elif s_gpa >= 3.2: data_GPA[x] = 40
